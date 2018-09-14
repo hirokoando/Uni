@@ -36,7 +36,7 @@ public class RemortCon : MonoBehaviour {
     public int bombNum ;
     public int climNum ;
     public int stepNum ;
-    public int friNum ;
+    public int flyNum ;
     public float timerM;
     public float timerS;
     public float goalaim ;
@@ -102,11 +102,19 @@ public class RemortCon : MonoBehaviour {
 
             textTimer.GetComponent<Text>().text = "Time " + timerM.ToString("00") + " : " + ((int)timerS).ToString("00");
 
-            if (alltime < 0)
+            if (alltime < 0 || alluniNum - dieunis < goalaim )
             {
                 gameOver = true;
             }
         }
+
+        //ボタンテキスト表示
+        nomalB.transform.Find("Num").gameObject.GetComponent<Text>().text = nomalNum.ToString();
+        stopB.transform.Find("Num").gameObject.GetComponent<Text>().text = stopNum.ToString();
+        bombB.transform.Find("Num").gameObject.GetComponent<Text>().text = bombNum.ToString();
+        climB.transform.Find("Num").gameObject.GetComponent<Text>().text = climNum.ToString();
+        stepB.transform.Find("Num").gameObject.GetComponent<Text>().text = stepNum.ToString();
+        flyB.transform.Find("Num").gameObject.GetComponent<Text>().text = flyNum.ToString();
         
         //Die　All　テキスト表示
         textAll.GetComponent<Text>().text = "Die / All " + dieunis.ToString() + " / " + alluniNum.ToString();
@@ -125,35 +133,115 @@ public class RemortCon : MonoBehaviour {
         
     }
 
-    void NomalClick()
+    
+
+    public void NomalClick()
     {
-        camecon.uni1.GetComponent<UniCon>().unistate = UniCon.UniState.Nomal;
+        var unia = camecon.uni1.GetComponent<UniCon>();
+
+
+        if (unia == null)
+        {
+            return;
+        }
+
+        if (UniCon.UniState.Nomal != unia.unistate && nomalNum >0)
+        {
+            unia.unistate = UniCon.UniState.Nomal;
+            nomalNum+= -1;
+        }
+        
     }
 
-    void StopClick()
+    public void StopClick()
     {
+        var unia = camecon.uni1.GetComponent<UniCon>();
 
+
+        if (unia == null)
+        {
+            Debug.Log("null");
+
+            return;
+        }
+
+        if (UniCon.UniState.Stop != unia.unistate && stopNum > 0)
+        {
+            unia.unistate = UniCon.UniState.Stop;
+            stopNum += -1;
+        }
+        
     }
 
     public void BombClick()
     {
         var unia = camecon.uni1.GetComponent<UniCon>();
-        unia.unistate = UniCon.UniState.Bomb;
+
+        if(unia == null)
+        {
+            return;
+        }
+
+        if( UniCon.UniState.Bomb != unia.unistate && bombNum>0)
+        {
+            unia.unistate = UniCon.UniState.Bomb;
+            bombNum += -1;
+        }
+        
     }
 
-    void ClimClick()
+    public void ClimClick()
     {
+        var unia = camecon.uni1.GetComponent<UniCon>();
 
+
+        if (unia == null)
+        {
+            return;
+        }
+
+        if (UniCon.UniState.Clim != unia.unistate && climNum>0)
+        {
+            unia.unistate = UniCon.UniState.Clim;
+            climNum += -1;
+        }
+        
     }
 
-    void StepClick()
+    public void StepClick()
     {
+        var unia = camecon.uni1.GetComponent<UniCon>();
 
+
+        if (unia == null)
+        {
+            return;
+        }
+
+        if (UniCon.UniState.Step != unia.unistate && stepNum>0)
+        {
+            unia.unistate = UniCon.UniState.Step;
+            stepNum += -1;
+        }
+        
     }
 
-    void FlyClick()
+    public void FlyClick()
     {
+        var unia = camecon.uni1.GetComponent<UniCon>();
 
+
+        if (unia == null)
+        {
+            return;
+        }
+
+        if (UniCon.UniState.Fly != unia.unistate && flyNum>0)
+        {
+            unia.unistate = UniCon.UniState.Fly;
+            flyNum += -1;
+        }
+        
     }
 
 }

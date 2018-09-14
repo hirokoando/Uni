@@ -8,6 +8,11 @@ public class TileMapController : MonoBehaviour {
 
     Tilemap tiles;
     int bombrange = 4;
+  
+    [SerializeField]
+    TileBase[] tileRight;
+    [SerializeField]
+    TileBase[] tileLeft;
 
     // Use this for initialization
     void Start () {
@@ -38,5 +43,7 @@ public class TileMapController : MonoBehaviour {
 
 
     }
+
+   
 
 }

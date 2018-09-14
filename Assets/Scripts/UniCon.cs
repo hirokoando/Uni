@@ -13,7 +13,7 @@ public class UniCon : MonoBehaviour {
         Bomb = 2,
         Clim = 3,
         Step = 4,
-        Fri = 5,
+        Fly = 5,
       
     }
     public UniState unistate = UniState.Nomal;
@@ -57,13 +57,29 @@ public class UniCon : MonoBehaviour {
     [SerializeField]
     GameObject stopC;
    
-
     //Bomb
     //時間計測
     public float alltime = 0.0f;
     //爆発まで
     private float bombtimer = 5.0f;
     private float animetimer = 4.0f;
+    //ゲームオブジェクト
+    Collider2D[] targets;
+
+
+    //戒壇
+    //時間経過保存
+    float steptime;
+    //span
+    float stepspan = 0.8f;
+    //時間制限
+    float steplimit =20.0f;
+    //階段モード　レイキャスト角度
+    float rey;
+    //初回フラグ
+    bool stepF = true;
+    //ターンの値保存
+    bool oldRL;
 
     //アニメーションするためのコンポーネントを入れる
     Animator animator;
@@ -73,6 +89,13 @@ public class UniCon : MonoBehaviour {
     //タイルマップ取得
     GameObject tilemap;
     TileMapController tilemapcon;
+    GameObject tilemapStep;
+    TileStepCon tscon;
+    //階段プレハブ
+    [SerializeField]
+    GameObject stepPrefab;
+
+
 
     //rimortCon取得
     RemortCon remocon;
@@ -85,6 +108,9 @@ public class UniCon : MonoBehaviour {
         // タイルマップ取得
         tilemap = GameObject.Find("Tilemap");
         this.tilemapcon = tilemap.GetComponent<TileMapController>();
+
+        tilemapStep = GameObject.Find("TilemapStep");
+        this.tscon = tilemapStep.GetComponent<TileStepCon>();
 
         //リモート取得
         this.remocon = GameObject.Find("Remort").GetComponent<RemortCon>();
@@ -119,12 +145,16 @@ public class UniCon : MonoBehaviour {
         {
             isGround = false;
         }
+
+
         //死亡
         if (dead)
         {
             remocon.dieunis += 1;
             Destroy(gameObject);
         }
+
+
 
         //状態による各動作切り替え
         switch (unistate)
@@ -150,10 +180,11 @@ public class UniCon : MonoBehaviour {
                 break;
 
             case UniState.Step:
+                StepMove();
                 DeadHigh();
                 break;
 
-            case UniState.Fri:
+            case UniState.Fly:
                 NomalMove();
                 break;
 
@@ -170,6 +201,8 @@ public class UniCon : MonoBehaviour {
         turnLC.GetComponent<BoxCollider2D>().enabled = true;
         stopC.GetComponent<CircleCollider2D>().enabled = false;
         this.GetComponent<Rigidbody2D>().gravityScale = 0.5f;
+        this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
+
 
         climR = false;
         climL = false;
@@ -199,6 +232,8 @@ public class UniCon : MonoBehaviour {
         turnLC.GetComponent<BoxCollider2D>().enabled = false;
         stopC.GetComponent<CircleCollider2D>().enabled = true;
         this.GetComponent<Rigidbody2D>().gravityScale = 0.5f;
+        this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll ;
+       
     }
 
     //ボムの動作
@@ -211,6 +246,7 @@ public class UniCon : MonoBehaviour {
         stopC.GetComponent<CircleCollider2D>().enabled = false;
         TextMesh bombt = bombT.GetComponent<TextMesh>();
         this.GetComponent<Rigidbody2D>().gravityScale = 0.5f;
+        this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 
         //時間経過
         alltime += Time.deltaTime;
@@ -234,8 +270,24 @@ public class UniCon : MonoBehaviour {
         }
         else if (bombtimer <= alltime)
         {
+            
+            
             //5秒でタイルマップにposition伝える(タイル消去)
             tilemapcon.BombDelete(this.gameObject.transform.position);
+
+
+            //（ステップのレイヤー番号１０）
+            int layerMask = 1 << 11;
+            targets = Physics2D.OverlapCircleAll(transform.position, 1, layerMask);
+
+            // GameObject型の変数に、中身を順番に取り出す。
+            // foreachは配列の要素の数だけループします。
+            foreach (Collider2D st in targets)
+            {
+                // 消す！
+                Destroy(st.gameObject);
+            }
+
             //タイマー表示消す
             bombT.SetActive(false);
 
@@ -263,6 +315,7 @@ public class UniCon : MonoBehaviour {
         turnLC.GetComponent<BoxCollider2D>().enabled = true;
         stopC.GetComponent<CircleCollider2D>().enabled = false;
         this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
+        this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 
         if (isGround)
         {
@@ -313,6 +366,110 @@ public class UniCon : MonoBehaviour {
 
     }
 
+    //階段の動作
+    void StepMove()
+    {
+        this.GetComponent<CircleCollider2D>().enabled = true;
+        turnRC.GetComponent<BoxCollider2D>().enabled = true;
+        turnLC.GetComponent<BoxCollider2D>().enabled = true;
+        stopC.GetComponent<CircleCollider2D>().enabled = false;
+        this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
+        this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        //時間経過
+        alltime += Time.deltaTime;
+       
+
+        if (turn)
+        {
+            rey = 20.0f;
+        }
+        else
+        {
+            rey = -20.0f;
+        }
+
+        // 地面との衝突を検知する箱
+        RaycastHit2D hitstep = Physics2D.BoxCast(
+            transform.position,// 始点 
+            new Vector2(1.0f, 1.0f), // さいず　
+            rey,//角度
+            Vector2.down,//向き
+            1.5f,//距離
+            Ground);//感知するレイヤー
+
+        //設置判定
+        if (hitstep.collider)
+        {
+            isGround = true;
+        }
+        else
+        {
+            isGround = false;
+        }
+
+        if(stepF == true)
+        {
+            oldRL = turn;
+            stepF = false;
+        }
+
+        if (steplimit >= steptime)
+        {
+            if (isGround)
+            {
+                    if(turn == oldRL)
+                    {
+                        if (turn)
+                        {
+                            this.transform.position += new Vector3(0.02f, 0.01f);
+                        }
+                        else
+                        {
+                            this.transform.position += new Vector3(-0.02f, 0.01f);
+                        }
+                       
+                    }
+                    else
+                    {
+                        steptime = 0;
+                        stepF = true;
+                        unistate = UniCon.UniState.Nomal;
+                    }
+                
+            }
+
+            if (stepspan <= alltime)
+            {
+               
+                steptime += alltime;
+                //tscon.StepCreate(this.transform.position, turn);
+                GameObject road = Instantiate(stepPrefab) as GameObject;
+                if (turn)
+                {
+                    road.transform.position = new Vector2(this.transform.position.x +1.5f, this.transform.position.y - 1.0f);
+                }
+                else
+                {
+                    road.transform.position = new Vector2(this.transform.position.x -1.5f, this.transform.position.y - 1.0f);
+                }
+                
+                road.transform.rotation = Quaternion.Euler(0.0f, 0.0f, rey);
+
+                alltime = 0;
+            }
+
+        }
+        else
+        {
+            steptime = 0;
+            stepF = true;
+            unistate = UniCon.UniState.Nomal;
+        }
+
+
+    }
+
     void DeadHigh()
     {
         //　落ちている状態
@@ -353,13 +510,7 @@ public class UniCon : MonoBehaviour {
         }
     }
 
-    void Dead()
-    {
-        
-    }
-
-   
-
+  
   
 
     //deadobjに触れたら
@@ -370,5 +521,8 @@ public class UniCon : MonoBehaviour {
             dead = true;
             
         }
+
+       
     }
+
 }
